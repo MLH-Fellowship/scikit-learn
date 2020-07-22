@@ -156,7 +156,7 @@ class LatentDirichletAllocation(TransformerMixin, BaseEstimator):
         to `1 / n_components`.
         In [1]_, this is called `eta`.
 
-    learning_method : 'batch' | 'online', default='batch'
+    learning_method : 'batch' | 'online' | 'gibbs', default='batch'
         Method used to update `_component`. Only used in :meth:`fit` method.
         In general, if the data size is large, the online update will be much
         faster than the batch update.
@@ -170,6 +170,8 @@ class LatentDirichletAllocation(TransformerMixin, BaseEstimator):
                 mini-batch of training data to update the ``components_``
                 variable incrementally. The learning rate is controlled by the
                 ``learning_decay`` and the ``learning_offset`` parameters.
+            'gibbs': Collapsed Gibbs Sampling method. All training data is 
+                integrated in each EM update. 
 
         .. versionchanged:: 0.20
             The default learning method is now ``"batch"``.
