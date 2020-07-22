@@ -426,10 +426,10 @@ class LatentDirichletAllocation(TransformerMixin, BaseEstimator):
 
         return (doc_topic_distr, suff_stats)
 
-    def _em_step(self, X, total_samples, batch_update, parallel=None):
+    def _em_step(self, X, total_samples, parallel=None):
         """EM update for 1 iteration.
 
-        update `_component` by batch VB or online VB.
+        update `_component` by batch VB, online VB, or CGS.
 
         Parameters
         ----------
@@ -439,10 +439,6 @@ class LatentDirichletAllocation(TransformerMixin, BaseEstimator):
         total_samples : integer
             Total number of documents. It is only used when
             batch_update is `False`.
-
-        batch_update : boolean
-            Parameter that controls updating method.
-            `True` for batch learning, `False` for online learning.
 
         parallel : joblib.Parallel
             Pre-initialized instance of joblib.Parallel
@@ -458,10 +454,9 @@ class LatentDirichletAllocation(TransformerMixin, BaseEstimator):
                                      parallel=parallel)
 
         # M-step
-        if batch_update:
+        if self.learning_method == "batch":
             self.components_ = self.topic_word_prior_ + suff_stats
-        else:
-            # online update
+        elif self.learning_method == "online":
             # In the literature, the weight is `rho`
             weight = np.power(self.learning_offset + self.n_batch_iter_,
                               -self.learning_decay)
@@ -469,7 +464,9 @@ class LatentDirichletAllocation(TransformerMixin, BaseEstimator):
             self.components_ *= (1 - weight)
             self.components_ += (weight * (self.topic_word_prior_
                                            + doc_ratio * suff_stats))
-
+        else:
+            print("Placeholder while else statement is not populated")
+            # collapsed gibbs sampling
         # update `component_` related variables
         self.exp_dirichlet_component_ = np.exp(
             _dirichlet_expectation_2d(self.components_))
@@ -540,7 +537,6 @@ class LatentDirichletAllocation(TransformerMixin, BaseEstimator):
             for idx_slice in gen_batches(n_samples, batch_size):
                 self._em_step(X[idx_slice, :],
                               total_samples=self.total_samples,
-                              batch_update=False,
                               parallel=parallel)
 
         return self
@@ -583,11 +579,13 @@ class LatentDirichletAllocation(TransformerMixin, BaseEstimator):
                 if learning_method == 'online':
                     for idx_slice in gen_batches(n_samples, batch_size):
                         self._em_step(X[idx_slice, :], total_samples=n_samples,
-                                      batch_update=False, parallel=parallel)
-                else:
-                    # batch update
+                                      parallel=parallel)
+                elif learning_method == 'batch':
                     self._em_step(X, total_samples=n_samples,
-                                  batch_update=True, parallel=parallel)
+                                  parallel=parallel)
+                else:
+                    print("Placeholder while else statement is not populated")
+                    # collapsed gibbs sampling
 
                 # check perplexity
                 if evaluate_every > 0 and (i + 1) % evaluate_every == 0:
