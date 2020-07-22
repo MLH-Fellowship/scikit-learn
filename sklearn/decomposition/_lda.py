@@ -332,7 +332,7 @@ class LatentDirichletAllocation(TransformerMixin, BaseEstimator):
             raise ValueError("Invalid 'learning_offset' parameter: %r"
                              % self.learning_offset)
 
-        if self.learning_method not in ("batch", "online"):
+        if self.learning_method not in ("batch", "online", "gibbs"):
             raise ValueError("Invalid 'learning_method' parameter: %r"
                              % self.learning_method)
 
