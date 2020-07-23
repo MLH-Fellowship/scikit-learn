@@ -308,6 +308,27 @@ def f_regression(X, y, *, center=True):
     pv = stats.f.sf(F, 1, degrees_of_freedom)
     return F, pv
 
+@_deprecate_positional_args
+def f_regression_ordinal(X, y, *, center=True):
+    X, y = check_X_y(X, y, accept_sparse=['csr', 'csc', 'coo'],
+                     dtype=np.float64)
+
+    # convert to ranked variables
+    X_ranked = np.apply_along_axis(stats.rankdata, 0, X)
+    y_ranked = np.apply_along_axis(stats.rankdata, 0, y)
+
+    corr = np.corrcoef(X_ranked, y_ranked, False)
+    print("Correlation coefficients are: ", corr)
+    degrees_of_freedom = y.size - (2 if center else 1)
+
+    # corr can have elements equal to 1, so avoid zero division warnings
+    with np.errstate(divide='ignore'):
+        F = degrees_of_freedom*(corr ** 2 / (1 - corr ** 2)).clip(0)
+
+    # convert to p-value
+    pv = stats.f.sf(F, 1, degrees_of_freedom)
+    return F, pv
+
 
 ######################################################################
 # Base classes
